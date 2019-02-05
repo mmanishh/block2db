@@ -14,7 +14,7 @@ class MongoHelper:
             self.collection = collection
         else:
             self.client = MongoClient(Constants.MONGO_DB_URI)
-            self.db = self.client.bforensic
+            self.db = self.client.block2db
             self.collection = collection
 
     def insert(self, dict):
