@@ -15,6 +15,7 @@ class BlockDB:
     def iterate_blocks(self, start, end):
 
         for height in range(start, end):
+            print("Extracting txns of block height {}".format(height))
             self.iterate_txn(block_height=height)
 
     def iterate_txn(self, block_height=100000):
@@ -25,10 +26,14 @@ class BlockDB:
 
         mongo_helper = MongoHelper(collection=self.db_collection)
 
+        inserted_ids = []
+
         for txn in txn_list:
             result = self.get_raw_txn(txn)
             try:
-                print("Inserted txn of id :", mongo_helper.insert(result))
+                inserted_id = mongo_helper.insert(result).inserted_id
+                print("Inserted txn of id :",inserted_id)
+                inserted_ids.append(inserted_id)
             except DuplicateKeyError:
                 print("Txn of id {} already exists.".format(txn))
 
