@@ -10,7 +10,7 @@ class BitcoinCLI:
             rpc_pass = '8ak1gI25KFTvjovL3gAM967mies3E='
         #self.rpc_connection = AuthServiceProxy("http://%s:%s@127.0.0.1:8332" % (rpc_user, rpc_pass),timeout=180)
         self.rpc_connection = AuthServiceProxy(
-            "http://%s:%s@5.196.65.205:8332" % ("bitcoinrpc", "JRkDy3tgCYdmCEqY1VdfdfhTswiRva"))
+            "http://%s:%s@5.196.65.205:8332" % ("bitcoinrpc", "JRkDy3tgCYdmCEqY1VdfdfhTswiRva"),timeout=600)
 
     def get_best_block_hash(self):
         return self.rpc_connection.getbestblockhash()
