@@ -1,5 +1,6 @@
 from pymongo.errors import DuplicateKeyError
 
+from block2db.core.logger import Logger
 from .bitcoin_cli import BitcoinCLI
 from .mongo_helper import MongoHelper
 from bson.decimal128 import Decimal128
@@ -11,11 +12,12 @@ class BlockDB:
 
         self.cli = BitcoinCLI()
         self.db_collection = 'bitcoin_db'
+        self.logger = Logger()
 
     def iterate_blocks(self, start, end):
 
         for height in range(start, end):
-            print("Extracting txns of block height {}".format(height))
+            self.logger.info("Extracting txns of block height {}".format(height))
             self.iterate_txn(block_height=height)
 
     def iterate_txn(self, block_height=100000):
@@ -32,10 +34,10 @@ class BlockDB:
             result = self.get_raw_txn(txn)
             try:
                 inserted_id = mongo_helper.insert(result).inserted_id
-                print("Inserted txn of id :",inserted_id)
+                self.logger.info("Inserted txn of id :"+inserted_id)
                 inserted_ids.append(inserted_id)
             except DuplicateKeyError:
-                print("Txn of id {} already exists.".format(txn))
+                self.logger.info("Txn of id {} already exists.".format(txn))
 
     def get_raw_txn(self, tx_id):
         result = self.cli.get_raw_transaction(tx_id)
