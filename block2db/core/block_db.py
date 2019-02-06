@@ -32,6 +32,7 @@ class BlockDB:
 
         for txn in txn_list:
             result = self.get_raw_txn(txn)
+            result['block_height'] = block_height
             try:
                 inserted_id = mongo_helper.insert(result).inserted_id
                 self.logger.info("Inserted txn of id :"+inserted_id)
