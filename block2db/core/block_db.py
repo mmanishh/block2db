@@ -68,6 +68,7 @@ class BlockDB:
             if 'coinbase' in each:
                 input_dict['address'] = each['coinbase']
                 input_dict['sequence'] = each['sequence']
+                input_dict['type'] = 'coinbase'
             else:
                 address, value = self.get_prev_out(each['txid'], each['vout'])
                 input_dict = dict(address=address, value=Decimal128(str("{0:.8f}".format(value))),
