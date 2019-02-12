@@ -1,6 +1,8 @@
+from bitcoinrpc.authproxy import JSONRPCException
 from pymongo.errors import DuplicateKeyError
 
 from block2db.core.logger import Logger
+from block2db.core.redis_helper import RedisHelper
 from .bitcoin_cli import BitcoinCLI
 from .mongo_helper import MongoHelper
 from bson.decimal128 import Decimal128
@@ -13,12 +15,20 @@ class BlockDB:
         self.cli = BitcoinCLI()
         self.db_collection = 'bitcoin_db'
         self.logger = Logger()
+        self.redis = RedisHelper()
 
-    def iterate_blocks(self, start, end):
+    def iterate_blocks(self):
+        start = 1 if self.redis.hget('block_height') is None else \
+            int(self.redis.hget('block_height'))  # get block_height checkpoint from redis db
+        end = self.cli.get_block_count()
 
+        print("start block height ", start, end)
         for height in range(start, end):
             self.logger.info("Extracting txns of block height {}".format(height))
             self.iterate_txn(block_height=height)
+
+            # setting block height in redis as checkpoint for future
+            self.redis.hset('block_height', height)
 
     def iterate_txn(self, block_height=100000):
 
@@ -31,14 +41,17 @@ class BlockDB:
         inserted_ids = []
 
         for txn in txn_list:
-            result = self.get_raw_txn(txn)
-            result['block_height'] = block_height
             try:
+                result = self.get_raw_txn(txn)
+                result['block_height'] = block_height
+
                 inserted_id = mongo_helper.insert(result).inserted_id
-                self.logger.info("Inserted txn of id :"+inserted_id)
+                self.logger.info("Inserted txn of id :" + inserted_id)
                 inserted_ids.append(inserted_id)
             except DuplicateKeyError:
                 self.logger.info("Txn of id {} already exists.".format(txn))
+            except JSONRPCException as e:
+                print(e.message)
 
     def get_raw_txn(self, tx_id):
         result = self.cli.get_raw_transaction(tx_id)
