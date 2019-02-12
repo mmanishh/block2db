@@ -22,12 +22,10 @@ def main():
 
     result = block_db.get_raw_txn('5481ccb8fd867ae90ae33793fff2b6bcd93f8881f1c883035f955c59d4fa8322')
 
-    #print(json.dumps(result, indent=4))
+    # print(json.dumps(result, indent=4))
     # 'fff2525b8931402dd09222c50775608f75787bd2b87e56995a7bdd30f79702c4'
 
-    block_db.iterate_blocks(100000,100050)
-
-
+    block_db.iterate_blocks()
 
 
 if __name__ == "__main__":
