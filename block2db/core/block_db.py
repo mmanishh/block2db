@@ -52,7 +52,7 @@ class BlockDB:
 
         for txn in txn_list:
             try:
-                result = self.get_raw_txn(txn)
+                result = self.get_raw_txn_deprecated(txn)
                 result['block_height'] = block_height
 
                 inserted_id = mongo_helper.insert(result).inserted_id
@@ -84,29 +84,35 @@ class BlockDB:
             for each in vins:
                 input_dict = {}
                 if 'coinbase' in each:
-                    input_dict['address'] = each['coinbase']
+                    input_dict['coinbase'] = each['coinbase']
                     input_dict['sequence'] = each['sequence']
                     input_dict['type'] = 'coinbase'
+
                 else:
-                    address, value = self.get_prev_out(each['txid'], each['vout'])
-                    input_dict = dict(address=address, value=Decimal128(str("{0:.8f}".format(value))),
-                                      sequence=each['sequence'])
+                    output = self.get_prev_out(each['txid'], each['vout'])
+                    input_dict = dict(prev_out=output,
+                                      sequence=each['sequence'],
+                                      type='address',
+                                      scriptSig=each['scriptSig'])
 
                 inputs.append(input_dict)
 
             for out in vouts:
                 if out['scriptPubKey']['type'] == 'nonstandard':
-                    output = {'value': Decimal128(str("{0:.8f}".format(out['value']))),
-                              'n': out['n']}
+                    output = {'address': 'nonstandard',
+                              'value': Decimal128(str("{0:.8f}".format(out['value']))),
+                              'n': out['n'],
+                              'scriptPubKey': out['scriptPubKey']}
                 else:
                     output = {'address': out['scriptPubKey']['addresses'][0],
                               'value': Decimal128(str("{0:.8f}".format(out['value']))),
-                              'n': out['n']}
+                              'n': out['n'],
+                              'scriptPubKey': out['scriptPubKey']}
 
                 outputs.append(output)
 
-            result['inputs'] = inputs
-            result['outputs'] = outputs
+            result['vin'] = inputs
+            result['vout'] = outputs
 
         except KeyError as e:
             self.logger.info("Key error for tx: {tx_id}".format(tx_id=tx_id))
@@ -147,7 +153,10 @@ class BlockDB:
         :return: Tuple address and value
         """
         result = self.cli.get_raw_transaction(tx_id)
-        address = result['vout'][n]['scriptPubKey']['addresses'][0]
-        value = result['vout'][n]['value']
+        out = result['vout'][n]
+        output = {'address': out['scriptPubKey']['addresses'][0],
+                  'value': Decimal128(str("{0:.8f}".format(out['value']))),
+                  'n': out['n'],
+                  'scriptPubKey': out['scriptPubKey']}
 
-        return address, value
+        return output
